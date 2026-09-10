@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuesioner Kondisi Masjid</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <div>
+      <h1>Pemetaan Kondisi, Potensi, dan Tantangan Dakwah Masjid</h1>
+      <p>Data responden dan kondisi masjid</p>
+    </div>
+
+    <button class="btn btn-primary" onclick="openForm()">
+      + Tambah Responden
+    </button>
+  </div>
+
+
+  <!-- TAB NAVIGASI -->
+  <div class="tabs">
+    <button
+      type="button"
+      class="tab-btn active"
+      data-page="data"
+      onclick="switchPage('data')"
+    >
+      Data Responden
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      data-page="charts"
+      onclick="switchPage('charts')"
+    >
+      Statistik &amp; Grafik
+    </button>
+  </div>
+
+
+  <!-- ==========================================
+       HALAMAN 1 : TABEL DATA
+       ========================================== -->
+
+  <div id="page-data" class="page">
+
+    <div class="card">
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Nama Peserta</th>
+              <th>Nama Masjid</th>
+              <th>Usia Responden</th>
+              <th>Posisi/Amanah</th>
+              <th>Shalat/Pekan</th>
+              <th>Usia Ketua</th>
+              <th>Rata-rata Usia Pengurus</th>
+              <th>Subuh</th>
+              <th>Zuhur</th>
+              <th>Ashar</th>
+              <th>Maghrib</th>
+              <th>Isya</th>
+              <th>Anak-anak</th>
+              <th>Remaja</th>
+              <th>Dewasa</th>
+              <th>40–60 Tahun</th>
+              <th>Lanjut Usia</th>
+              <th>Wilayah Dakwah</th>
+              <th>Problematika Masyarakat</th>
+              <th>Kendala Takmir</th>
+              <th>Solusi</th>
+              <th>Impian Jamaah</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+
+          <tbody id="dataTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ==========================================
+       HALAMAN 2 : STATISTIK & GRAFIK
+       ========================================== -->
+
+  <div id="page-charts" class="page" hidden>
+    <div id="chartsContainer"></div>
+  </div>
+
+</div>
+
+
+<!--
+==================================================
+DIALOG FORM
+==================================================
+-->
+
+<dialog id="formDialog">
+
+  <div class="dialog-header">
+
+    <h2 id="dialogTitle">
+      Tambah Data Responden
+    </h2>
+
+    <button
+      type="button"
+      class="close-btn"
+      onclick="closeForm()"
+      aria-label="Tutup"
+    >
+      &times;
+    </button>
+
+  </div>
+
+
+  <form id="questionnaireForm">
+
+    <div class="dialog-body">
+
+      <div class="participant-info">
+
+        <div class="form-group">
+
+          <label
+            class="form-label"
+            for="namaPeserta"
+          >
+            Nama Peserta
+            <span class="required">*</span>
+          </label>
+
+          <input
+            type="text"
+            id="namaPeserta"
+            name="namaPeserta"
+            placeholder="Masukkan nama peserta"
+            required
+          >
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label
+            class="form-label"
+            for="namaMasjid"
+          >
+            Nama Masjid
+            <span class="required">*</span>
+          </label>
+
+          <input
+            type="text"
+            id="namaMasjid"
+            name="namaMasjid"
+            placeholder="Masukkan nama masjid"
+            required
+          >
+
+        </div>
+
+      </div>
+
+
+      <div id="questionsContainer"></div>
+
+    </div>
+
+
+    <div class="dialog-footer">
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        onclick="closeForm()"
+      >
+        Batal
+      </button>
+
+      <button
+        type="submit"
+        id="submitButton"
+        class="btn btn-primary"
+      >
+        Simpan Jawaban
+      </button>
+
+    </div>
+
+  </form>
+
+</dialog>
+
+
+<!-- ==========================================
+     OVERLAY FULLSCREEN PIE CHART
+     ========================================== -->
+
+<div
+  class="pie-overlay"
+  id="pieOverlay"
+  onclick="closePieFullscreen(event)"
+>
+  <div class="pie-overlay-inner" id="pieOverlayInner"></div>
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
