@@ -907,9 +907,193 @@ function switchPage(page) {
 
 
   if (page === "charts") {
+    renderAnalysis();
     renderCharts();
+    
   }
 
+}
+
+/* ==================================================
+   PANEL METODOLOGI (TRANSPARANSI FORMULA)
+   ================================================== */
+
+function buildMethodologyHTML() {
+  return `
+    <details class="methodology">
+      <summary>
+        <span class="methodology-icon">Σ</span>
+        Metodologi &amp; Formula Perhitungan
+      </summary>
+      <div class="methodology-body">
+
+        <h4>1. Indeks Kemakmuran Masjid (IKM)</h4>
+        <p>
+          IKM adalah skor gabungan berskala <strong>0–100</strong> yang dihitung
+          dari lima dimensi dengan bobot masing-masing. Skor akhir adalah
+          <em>rata-rata dari skor tiap responden</em>, karena setiap responden
+          mewakili satu masjid.
+        </p>
+
+        <div class="formula-box">
+          <span class="var">IKM</span> <span class="op">=</span>
+          (<span class="num">0.35</span> <span class="op">×</span> <span class="var">Vitalitas</span>)
+          <span class="op">+</span>
+          (<span class="num">0.20</span> <span class="op">×</span> <span class="var">Usia</span>)
+          <span class="op">+</span>
+          (<span class="num">0.20</span> <span class="op">×</span> <span class="var">Kepemimpinan</span>)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="op">+</span>
+          (<span class="num">0.15</span> <span class="op">×</span> <span class="var">Jangkauan</span>)
+          <span class="op">+</span>
+          (<span class="num">0.10</span> <span class="op">×</span> <span class="var">Partisipasi</span>)
+        </div>
+
+        <h4>2. Bobot &amp; Sumber Data Tiap Dimensi</h4>
+        <table class="weight-table">
+          <thead>
+            <tr>
+              <th>Dimensi</th>
+              <th>Bobot</th>
+              <th>Sumber Pertanyaan</th>
+              <th>Cara Menghitung Skor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Vitalitas Jamaah</strong></td>
+              <td class="w-value">35%</td>
+              <td>Q6–Q10 (jamaah per waktu shalat)</td>
+              <td>Rata-rata jamaah ÷ 60 × 100, dibatasi 100</td>
+            </tr>
+            <tr>
+              <td><strong>Keseimbangan Usia</strong></td>
+              <td class="w-value">20%</td>
+              <td>Q11–Q15 (jamaah per kelompok usia)</td>
+              <td>Rata-rata per kelompok ÷ 35 × 100 (remaja ÷ 20)</td>
+            </tr>
+            <tr>
+              <td><strong>Regenerasi Kepemimpinan</strong></td>
+              <td class="w-value">20%</td>
+              <td>Q4, Q5, Q21, Q22 (usia ketua, pengurus, imam)</td>
+              <td>Kurva usia ideal (lihat poin 3)</td>
+            </tr>
+            <tr>
+              <td><strong>Jangkauan Dakwah</strong></td>
+              <td class="w-value">15%</td>
+              <td>Q16 (wilayah dakwah)</td>
+              <td>Jumlah warga ÷ 500 × 100, dibatasi 100</td>
+            </tr>
+            <tr>
+              <td><strong>Partisipasi Aktif</strong></td>
+              <td class="w-value">10%</td>
+              <td>Q3 (frekuensi shalat berjamaah/pekan)</td>
+              <td>Frekuensi ÷ 30 × 100, dibatasi 100</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>3. Formula Skor Usia (Kurva Non-Linier)</h4>
+        <p>
+          Usia <em>terlalu muda</em> maupun <em>terlalu tua</em> sama-sama
+          dikurangi skornya — yang ideal adalah usia produktif di sekitar titik
+          puncak. Semakin jauh dari titik ideal, semakin besar penalti.
+        </p>
+
+        <div class="formula-box">
+          <span class="var">SkorUsia</span> <span class="op">=</span>
+          <span class="op">max(</span><span class="num">0</span>,
+          <span class="num">100</span>
+          <span class="op">−</span>
+          <span class="op">|</span><span class="var">Usia</span>
+          <span class="op">−</span> <span class="var">Ideal</span><span class="op">|</span>
+          <span class="op">×</span> <span class="var">Penalti</span><span class="op">)</span>
+        </div>
+
+        <table class="weight-table">
+          <thead>
+            <tr>
+              <th>Variabel</th>
+              <th>Usia Ideal</th>
+              <th>Penalti / tahun</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Usia Ketua Takmir (Q4) &amp; Rata-rata Pengurus (Q5)</td>
+                <td class="w-value">42 tahun</td><td>2.4 poin</td></tr>
+            <tr><td>Usia Imam Termuda (Q21)</td>
+                <td class="w-value">27 tahun</td><td>2.8 poin</td></tr>
+            <tr><td>Usia Imam Tertua (Q22)</td>
+                <td class="w-value">45 tahun</td><td>1.8 poin</td></tr>
+          </tbody>
+        </table>
+
+        <h4>4. Ekstraksi Angka dari Range Jawaban</h4>
+        <p class="muted">
+          Jawaban seperti <code>"20–30 orang"</code> diubah menjadi
+          <code>25</code> (titik tengah). Jawaban tunggal seperti
+          <code>"≤ 5 orang"</code> diubah menjadi <code>5</code>.
+          Jawaban <code>"Tidak ada"</code> dihitung sebagai <code>0</code>.
+        </p>
+
+        <h4>5. Kategori IKM</h4>
+        <ul class="cat-list">
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#16a34a">Sangat Makmur</span>
+            <span class="cat-range">80 – 100</span>
+            <span>Masjid ideal: jamaah ramai, regenerasi berjalan, jangkauan luas.</span>
+          </li>
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#2563eb">Makmur</span>
+            <span class="cat-range">65 – 79</span>
+            <span>Kondisi baik dengan ruang perbaikan di beberapa dimensi.</span>
+          </li>
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#f59e0b">Cukup Makmur</span>
+            <span class="cat-range">50 – 64</span>
+            <span>Masih dapat ditingkatkan; perlu perhatian pada dimensi terlemah.</span>
+          </li>
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#ea580c">Kurang Makmur</span>
+            <span class="cat-range">35 – 49</span>
+            <span>Perlu pembenahan serius pada beberapa dimensi sekaligus.</span>
+          </li>
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#dc2626">Perlu Pembenahan</span>
+            <span class="cat-range">0 – 34</span>
+            <span>Masalah mendasar; butuh pendampingan intensif &amp; strategi ulang.</span>
+          </li>
+        </ul>
+
+        <h4>6. Metodologi Ranking Masalah, Kendala, Solusi &amp; Impian</h4>
+        <p>
+          Untuk pertanyaan <em>checkbox</em> (Q17–Q20), setiap pilihan dihitung
+          frekuensinya di seluruh responden, lalu diurutkan dari yang paling
+          sering dipilih. Persentase dihitung sebagai:
+        </p>
+        <div class="formula-box">
+          <span class="var">Persentase</span> <span class="op">=</span>
+          (<span class="var">Jumlah pemilih opsi</span>
+          <span class="op">÷</span> <span class="var">Total responden</span>)
+          <span class="op">×</span> <span class="num">100%</span>
+        </div>
+        <p class="muted">
+          Karena satu responden boleh memilih lebih dari satu opsi, total
+          persentase bisa melebihi 100% &mdash; ini normal dan menunjukkan
+          intensitas pilihan.
+        </p>
+
+        <h4>7. Catatan Interpretasi</h4>
+        <ul>
+          <li>IKM bersifat <strong>komparatif</strong>: bandingkan antar waktu atau antar kelompok masjid, bukan sebagai nilai absolut.</li>
+          <li>Bobot dapat disesuaikan dengan konteks wilayah (misalnya vitalitas jamaah lebih dominan di perkotaan).</li>
+          <li>Responden yang tidak mengisi pertanyaan tertentu tidak dihitung pada dimensi terkait (<em>missing data handling</em>).</li>
+          <li>Untuk validitas lebih tinggi, disarankan minimal <strong>10 responden</strong> per kelompok analisis.</li>
+        </ul>
+
+      </div>
+    </details>
+  `;
 }
 
 
@@ -2225,3 +2409,278 @@ function processImportRows(rows) {
   );
 
 }
+
+/* ==================================================
+   MODUL ANALISIS OTOMATIS
+   ================================================== */
+
+/* ---- Helper: ekstrak angka tengah dari range "20–30 orang" ---- */
+function extractMidNumber(value) {
+  if (value === undefined || value === null || value === "") return 0;
+  const s = String(value);
+  if (/tidak\s*ada/i.test(s)) return 0;
+  const matches = s.match(/\d+/g);
+  if (!matches) return 0;
+  const nums = matches.map(Number);
+  if (nums.length >= 2) return (nums[0] + nums[1]) / 2;
+  return nums[0] || 0;
+}
+
+/* ---- Skor linear: nilai / max × 100, dibatasi 0–100 ---- */
+function scoreLinear(value, max) {
+  const n = extractMidNumber(value);
+  if (n <= 0) return 0;
+  return Math.min(100, (n / max) * 100);
+}
+
+/* ---- Skor kurva usia: ideal di `ideal`, spread = penalti per tahun ---- */
+function scoreAge(value, ideal, spread) {
+  const age = extractMidNumber(value);
+  if (age <= 0) return 0;
+  return Math.max(0, 100 - Math.abs(age - ideal) * spread);
+}
+
+/* ---- Skor per nomor pertanyaan ---- */
+function scoreQuestion(number, value) {
+  if (value === undefined || value === null || value === "") return null;
+  switch (number) {
+    case 6: case 7: case 8: case 9: case 10:
+      return scoreLinear(value, 60);      // jamaah / waktu shalat
+    case 11: case 13: case 14: case 15:
+      return scoreLinear(value, 35);      // kelompok usia jamaah
+    case 12:
+      return scoreLinear(value, 20);      // remaja
+    case 16:
+      return scoreLinear(value, 500);     // wilayah dakwah
+    case 3:
+      return scoreLinear(value, 30);      // frekuensi shalat
+    case 4: case 5:
+      return scoreAge(value, 42, 2.4);    // usia kepemimpinan ideal ~42
+    case 21:
+      return scoreAge(value, 27, 2.8);    // imam termuda ideal ~27
+    case 22:
+      return scoreAge(value, 45, 1.8);    // imam tertua ideal ~45
+  }
+  return null;
+}
+
+/* ---- Hitung IKM per responden ---- */
+function calculateIKM(response) {
+  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+
+  const vitalitas = [6,7,8,9,10]
+    .map(n => scoreQuestion(n, response["q"+n]))
+    .filter(s => s !== null);
+
+  const usia = [11,12,13,14,15]
+    .map(n => scoreQuestion(n, response["q"+n]))
+    .filter(s => s !== null);
+
+  const kepemimpinan = [4,5,21,22]
+    .map(n => scoreQuestion(n, response["q"+n]))
+    .filter(s => s !== null);
+
+  const jangkauan    = scoreQuestion(16, response.q16) ?? 0;
+  const partisipasi  = scoreQuestion(3,  response.q3)  ?? 0;
+
+  const parts = {
+    vitalitas:    avg(vitalitas),
+    usia:         avg(usia),
+    kepemimpinan: avg(kepemimpinan),
+    jangkauan:    jangkauan,
+    partisipasi:  partisipasi
+  };
+
+  const weights = {
+    vitalitas: 0.35, usia: 0.20,
+    kepemimpinan: 0.20, jangkauan: 0.15, partisipasi: 0.10
+  };
+
+  let total = 0;
+  for (const k in weights) total += parts[k] * weights[k];
+
+  return { total: Math.round(total), parts };
+}
+
+/* ---- Kategori IKM ---- */
+function kategoriIKM(score) {
+  if (score >= 80) return { label: "Sangat Makmur",     color: "#16a34a" };
+  if (score >= 65) return { label: "Makmur",            color: "#2563eb" };
+  if (score >= 50) return { label: "Cukup Makmur",      color: "#f59e0b" };
+  if (score >= 35) return { label: "Kurang Makmur",     color: "#ea580c" };
+  return              { label: "Perlu Pembenahan", color: "#dc2626" };
+}
+
+/* ---- Rata-rata IKM semua responden ---- */
+function averageIKM() {
+  if (responses.length === 0) return null;
+  const scores = responses.map(r => calculateIKM(r).total);
+  return Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+}
+
+/* ---- Ranking jawaban checkbox (top N) ---- */
+function rankCheckbox(number, topN) {
+  topN = topN || 5;
+  return checkboxCounts(number)
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, topN);
+}
+
+/* ---- Gauge SVG setengah lingkaran ---- */
+function buildGaugeSVG(score, size) {
+  size = size || 200;
+  const strokeW = 14;
+  const r  = size / 2 - strokeW;
+  const cx = size / 2;
+  const cy = size / 2 + 4;
+
+  const angleFor = pct => Math.PI + (pct / 100) * Math.PI;
+
+  const pt = a => ({
+    x: cx + r * Math.cos(a),
+    y: cy + r * Math.sin(a)
+  });
+
+  const start = pt(Math.PI);
+  const end   = pt(2 * Math.PI);
+  const cur   = pt(angleFor(score));
+
+  const largeArc = score > 50 ? 1 : 0;
+
+  return `
+    <svg viewBox="0 0 ${size} ${size * 0.62}"
+         width="${size}" height="${size * 0.62}"
+         style="display:block;margin:0 auto">
+      <path d="M ${start.x} ${start.y}
+               A ${r} ${r} 0 0 1 ${end.x} ${end.y}"
+            fill="none" stroke="rgba(255,255,255,0.22)"
+            stroke-width="${strokeW}" stroke-linecap="round"/>
+      ${score > 0 ? `
+      <path d="M ${start.x} ${start.y}
+               A ${r} ${r} 0 ${largeArc} 1 ${cur.x} ${cur.y}"
+            fill="none" stroke="white"
+            stroke-width="${strokeW}" stroke-linecap="round"/>` : ""}
+    </svg>
+  `;
+}
+
+/* ---- Render kartu ranking (checkbox) ---- */
+function buildRankCard(title, icon, counts, cssClass) {
+  const totalResp = responses.length;
+
+  if (counts.length === 0) {
+    return `
+      <div class="insight-card ${cssClass}">
+        <h3>${icon} ${escapeHTML(title)}</h3>
+        <div class="rank-empty">Belum ada data</div>
+      </div>`;
+  }
+
+  const list = counts.map((item, i) => {
+    const pct = totalResp
+      ? Math.round((item.value / totalResp) * 100)
+      : 0;
+    return `
+      <li class="rank-item">
+        <span class="rank-num">${i + 1}</span>
+        <span class="rank-text">${escapeHTML(item.label)}</span>
+        <span class="rank-meta">${item.value}× · ${pct}%</span>
+      </li>`;
+  }).join("");
+
+  return `
+    <div class="insight-card ${cssClass}">
+      <h3>${icon} ${escapeHTML(title)}</h3>
+      <ul class="rank-list">${list}</ul>
+    </div>`;
+}
+
+/* ---- Render seluruh panel analisis ---- */
+function renderAnalysis() {
+  const container = document.getElementById("analysisContainer");
+  if (!container) return;
+
+  if (responses.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const ikm = averageIKM();
+  const kat = kategoriIKM(ikm);
+
+  /* Agregasi komponen rata-rata untuk breakdown */
+  const allParts = responses.map(r => calculateIKM(r).parts);
+  const avgPart = key =>
+    Math.round(allParts.reduce((s, p) => s + p[key], 0) / allParts.length);
+
+  const parts = {
+    "Vitalitas Jamaah":       avgPart("vitalitas"),
+    "Keseimbangan Usia":      avgPart("usia"),
+    "Regenerasi Kepemimpinan":avgPart("kepemimpinan"),
+    "Jangkauan Dakwah":       avgPart("jangkauan"),
+    "Partisipasi Aktif":      avgPart("partisipasi")
+  };
+
+  const breakdownHTML = Object.entries(parts).map(([label, val]) => `
+    <div class="ikm-comp">
+      <span class="ikm-comp-label">${label}</span>
+      <span class="ikm-comp-bar">
+        <span class="ikm-comp-fill" style="width:${val}%"></span>
+      </span>
+      <span class="ikm-comp-val">${val}</span>
+    </div>`).join("");
+
+  const problemTop    = rankCheckbox(17, 5);
+  const constraintTop = rankCheckbox(18, 5);
+  const solutionTop   = rankCheckbox(19, 5);
+  const dreamTop      = rankCheckbox(20, 5);
+
+  container.innerHTML = `
+    <div class="analysis-section">
+
+      <h2 style="margin:0 0 8px;padding-left:12px;font-size:21px;border-left:5px solid #2563eb">
+        Ringkasan Analisis
+      </h2>
+      <p class="section-desc" style="margin-left:17px">
+        Dihitung otomatis dari ${responses.length} responden berdasarkan formula
+        Indeks Kemakmuran Masjid (IKM) berbobot 5 dimensi.
+      </p>
+
+      <div class="analysis-hero">
+
+        <div class="ikm-card">
+          <h3>Indeks Kemakmuran Masjid</h3>
+
+          ${buildGaugeSVG(ikm, 210)}
+
+          <div class="ikm-score" style="margin-top:-30px">${ikm}</div>
+          <div class="ikm-score-label">dari 100</div>
+
+          <div class="ikm-category" style="background:${kat.color}">
+            ${kat.label}
+          </div>
+
+          <div class="ikm-breakdown">${breakdownHTML}</div>
+        </div>
+
+        <div class="insight-grid">
+          ${buildRankCard("Masalah Terbesar Masyarakat", "🔴", problemTop,    "problem")}
+          ${buildRankCard("Kendala Terbesar Takmir",     "🟠", constraintTop, "constraint")}
+          ${buildRankCard("Solusi Prioritas",            "🟢", solutionTop,   "solution")}
+          ${buildRankCard("Impian Utama Jamaah & Takmir","🟣", dreamTop,      "dream")}
+        </div>
+
+      </div>
+
+      ${buildMethodologyHTML()}
+    </div>
+  `;
+}
+
+/* ---- Panggil renderAnalysis dari renderCharts ---- */
+const _originalRenderCharts = renderCharts;
+renderCharts = function () {
+  _originalRenderCharts();
+  renderAnalysis();
+};
