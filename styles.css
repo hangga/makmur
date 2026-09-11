@@ -32,6 +32,24 @@ body {
   margin-bottom: 20px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-outline {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-outline:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
 .header h1 {
   margin: 0 0 6px;
   font-size: 28px;
@@ -585,12 +603,23 @@ input[type="text"]:focus {
     padding: 20px 12px;
   }
 
+  
   .header {
     flex-direction: column;
     align-items: stretch;
   }
 
   .header .btn {
+    width: 100%;
+  }
+
+    .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .header-actions .btn {
     width: 100%;
   }
 

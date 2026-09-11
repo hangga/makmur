@@ -243,8 +243,8 @@ const questions = [
       "Kenakalan remaja",
       "Prostitusi",
       "Perbuatan Maksiat",
-      "Judi online (judol)",
-      "Minuman keras (miras)",
+      "Judi online",
+      "Minuman keras",
       "Problematika rumah tangga",
       "Pengangguran",
       "Kerukunan warga",
@@ -293,6 +293,32 @@ const questions = [
       "Jumlah jamaah anak-anak semakin banyak",
       "Semakin banyak kegiatan positif di masjid",
       "Kondisi saat ini sudah baik"
+    ]
+  },
+
+  {
+    type: "radio",
+    number: 21,
+    question: "Berapa usia Imam termuda di masjid Anda?",
+    options: [
+      "≤ 20 tahun",
+      "20–25 tahun",
+      "25–30 tahun",
+      "30–35 tahun",
+      "35–40 tahun"
+    ]
+  },
+
+  {
+    type: "radio",
+    number: 22,
+    question: "Berapa usia Imam tertua di masjid Anda?",
+    options: [
+      "30-40 tahun",
+      "40–50 tahun",
+      "50–60 tahun",
+      "60–70 tahun",
+      "≥ 70 tahun"
     ]
   }
 
@@ -703,7 +729,7 @@ function renderTable() {
 
     tbody.innerHTML = `
       <tr>
-        <td colspan="24" class="empty">
+        <td colspan="26" class="empty">
           Belum ada data responden.
           Klik "Tambah Responden" untuk memasukkan data.
         </td>
@@ -745,6 +771,8 @@ function renderTable() {
       <td>${formatArray(data.q18)}</td>
       <td>${formatArray(data.q19)}</td>
       <td>${formatArray(data.q20)}</td>
+      <td>${escapeHTML(data.q21)}</td>   <!-- TAMBAH -->
+      <td>${escapeHTML(data.q22)}</td>   <!-- TAMBAH -->
       <td>
         <div class="action-buttons">
           <button
@@ -949,14 +977,17 @@ function radioCounts(number) {
 function checkboxCounts(number) {
 
   const q = getQuestion(number);
+  if (!q) return [];
 
-  if (!q) {
-    return [];
-  }
+  /* Normalisasi nilai supaya cocok walau ada spasi / dash berbeda */
+
+  const normalize = s =>
+    String(s).trim().replace(/\s+/g, " ");
 
 
   return q.options.map(option => {
 
+    const normOption = normalize(option);
     let count = 0;
 
     responses.forEach(data => {
@@ -965,17 +996,14 @@ function checkboxCounts(number) {
 
       if (
         Array.isArray(selected) &&
-        selected.includes(option)
+        selected.some(v => normalize(v) === normOption)
       ) {
         count++;
       }
 
     });
 
-    return {
-      label: option,
-      value: count
-    };
+    return { label: option, value: count };
 
   });
 
@@ -1543,6 +1571,21 @@ function renderCharts() {
           note: "Responden dapat memilih lebih dari satu jawaban."
         }
       ]
+    },
+
+    {
+      title: "13. Usia Imam di Masjid Anda",
+
+      charts: [
+        {
+          title: "13. Usia Imam Termuda",
+          counts: radioCounts(21)
+        },
+        {
+          title: "14. Usia Imam Tertua",
+          counts: radioCounts(22)
+        }
+      ]
     }
 
   ];
@@ -1599,3 +1642,586 @@ generateForm();
 renderTable();
 
 renderCharts();
+
+/* ==================================================
+   IMPORT DARI EXCEL / CSV
+   ================================================== */
+
+/*
+ * Alias nama kolom yang dikenali di baris pertama file.
+ * Kunci = field pada objek response (q1..q20).
+ * Nilai = daftar nama yang sudah dinormalisasi (huruf kecil, tanpa simbol).
+ */
+
+const COLUMN_ALIASES = {
+
+  namaPeserta: ["namapeserta", "nama", "peserta"],
+  namaMasjid:  ["namamasjid", "masjid"],
+
+  q1:  ["q1",  "usiaresponden"],
+  q2:  ["q2",  "posisiamanah", "posisi", "amanah"],
+  q3:  ["q3",  "shalatpekan", "shalatperpekan"],
+  q4:  ["q4",  "usiaketua"],
+  q5:  ["q5",  "rataratausiapengurus"],
+
+  q6:  ["q6",  "subuh"],
+  q7:  ["q7",  "zuhur"],
+  q8:  ["q8",  "ashar"],
+  q9:  ["q9",  "maghrib"],
+  q10: ["q10", "isya"],
+
+  q11: ["q11", "anakanak"],
+  q12: ["q12", "remaja"],
+  q13: ["q13", "dewasa"],
+  q14: ["q14", "4060tahun", "4060"],
+  q15: ["q15", "lanjutusia", "lansia"],
+
+  q16: ["q16", "wilayahdakwah", "wilayah"],
+
+  q17: ["q17", "problematikamasyarakat", "problematika"],
+  q18: ["q18", "kendalatakmir", "kendala"],
+  q19: ["q19", "solusi"],
+  q20: ["q20", "impianjamaah", "impian"],
+
+  /* TAMBAH: */
+  q21: ["q21", "usiaimamtermuda", "imamtermuda", "usiatermuda"],
+  q22: ["q22", "usiaimamtertua", "imamtertua", "usiatertua"]
+
+};
+
+
+/* --------------------------------------------------
+   Normalisasi nama header
+   -------------------------------------------------- */
+
+function normalizeHeader(value) {
+
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+}
+
+
+/* --------------------------------------------------
+   Bangun peta header -> index kolom
+   -------------------------------------------------- */
+
+function buildHeaderMap(headerRow) {
+
+  const map = {};
+
+  headerRow.forEach((rawHeader, index) => {
+
+    const norm = normalizeHeader(rawHeader);
+
+    if (!norm) {
+      return;
+    }
+
+    for (const [key, aliases] of Object.entries(COLUMN_ALIASES)) {
+
+      if (aliases.includes(norm)) {
+        map[key] = index;
+        return;
+      }
+
+    }
+
+  });
+
+  return map;
+
+}
+
+
+/* --------------------------------------------------
+   Tombol: buka pemilih file
+   -------------------------------------------------- */
+
+function triggerImport() {
+
+  document.getElementById("importFile").click();
+
+}
+
+
+/* --------------------------------------------------
+   Unduh template CSV
+   -------------------------------------------------- */
+
+function downloadTemplate() {
+
+  const headers = [
+    "Nama Peserta",
+    "Nama Masjid",
+    "Usia Responden",
+    "Posisi/Amanah",
+    "Shalat/Pekan",
+    "Usia Ketua",
+    "Rata-rata Usia Pengurus",
+    "Subuh",
+    "Zuhur",
+    "Ashar",
+    "Maghrib",
+    "Isya",
+    "Anak-anak",
+    "Remaja",
+    "Dewasa",
+    "40–60 Tahun",
+    "Lanjut Usia",
+    "Wilayah Dakwah",
+    "Problematika Masyarakat",
+    "Kendala Takmir",
+    "Solusi",
+    "Impian Jamaah",
+    "Usia Imam Termuda",   /* TAMBAH */
+    "Usia Imam Tertua"     /* TAMBAH */
+  ];
+
+  const example = [
+    "Ahmad Fauzi",
+    "Masjid Al-Ikhlas",
+    "30–40 tahun",
+    "Ketua",
+    "15–20 kali",
+    "40–50 tahun",
+    "40–50 tahun",
+    "20–30 orang",
+    "20–30 orang",
+    "20–30 orang",
+    "30–40 orang",
+    "20–30 orang",
+    "5–10 orang",
+    "1–5 orang",
+    "10–20 orang",
+    "10–20 orang",
+    "≤ 5 orang",
+    "100–200 orang",
+    /* PENTING: pakai "|" bukan ";" */
+    "Masalah ekonomi|Kenakalan remaja",
+    "Minimnya keterlibatan generasi muda",
+    "Pelatihan manajemen masjid",
+    "Jumlah jamaah semakin bertambah",
+    "25–30 tahun",       /* TAMBAH */
+    "60–70 tahun"        /* TAMBAH */
+  ];
+
+
+  /* Quote SELALU kalau mengandung karakter berbahaya:
+     koma, titik-koma, pipe, petik, atau newline. */
+
+  function csvEscape(cell) {
+
+    const s = String(cell);
+
+    if (/[",;|\n\r]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+
+    return s;
+
+  }
+
+
+  const csvRows =
+    [headers, example]
+      .map(row => row.map(csvEscape).join(","))
+      .join("\r\n");
+
+
+  const blob = new Blob(
+    ["\ufeff" + csvRows],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "template-kuesioner-masjid.csv";
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+
+}
+
+
+/* --------------------------------------------------
+   Parser CSV manual (mendukung tanda kutip & delimiter ; )
+   -------------------------------------------------- */
+
+function parseCSV(text) {
+
+  if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+  }
+
+
+  /* ---------- Deteksi delimiter yang lebih pintar ---------- */
+  /* Cek 5 baris pertama, abaikan karakter di dalam tanda kutip */
+
+  const sampleLines =
+    text.split(/\r?\n/).slice(0, 5).filter(l => l.trim() !== "");
+
+  let commaCount = 0;
+  let semicolonCount = 0;
+
+  sampleLines.forEach(line => {
+
+    let inQuotes = false;
+
+    for (let k = 0; k < line.length; k++) {
+
+      const ch = line[k];
+
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (!inQuotes) {
+        if (ch === ",") commaCount++;
+        else if (ch === ";") semicolonCount++;
+      }
+
+    }
+
+  });
+
+  const delimiter =
+    semicolonCount > commaCount ? ";" : ",";
+
+
+  /* ---------- Parsing ---------- */
+
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  let i = 0;
+
+
+  while (i < text.length) {
+
+    const c = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes) {
+      if (c === '"' && next === '"') { field += '"'; i += 2; continue; }
+      if (c === '"') { inQuotes = false; i++; continue; }
+      field += c; i++; continue;
+    }
+
+    if (c === '"') { inQuotes = true; i++; continue; }
+
+    if (c === delimiter) {
+      row.push(field);
+      field = "";
+      i++;
+      continue;
+    }
+
+    if (c === "\r" || c === "\n") {
+      if (c === "\r" && next === "\n") i++;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+      i++;
+      continue;
+    }
+
+    field += c;
+    i++;
+
+  }
+
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+
+
+  return rows.filter(r => r.some(c => String(c).trim() !== ""));
+
+}
+
+/* --------------------------------------------------
+   Handler pemilihan file
+   -------------------------------------------------- */
+
+function handleImportFile(event) {
+
+  const file = event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+
+  const ext =
+    file.name.split(".").pop().toLowerCase();
+
+  const reader = new FileReader();
+
+
+  reader.onload = function (e) {
+
+    try {
+
+      let rows;
+
+
+      /* ---------- CSV ---------- */
+
+      if (ext === "csv") {
+
+        rows = parseCSV(e.target.result);
+
+      }
+
+
+      /* ---------- XLSX / XLS ---------- */
+
+      else if (ext === "xlsx" || ext === "xls") {
+
+        if (typeof XLSX === "undefined") {
+
+          alert(
+            "Library pembaca Excel (.xlsx) tidak tersedia.\n\n" +
+            "Solusi: simpan file Excel Anda sebagai CSV terlebih dahulu " +
+            "(File → Save As → CSV UTF-8), lalu impor kembali file CSV tersebut."
+          );
+
+          return;
+
+        }
+
+        const data = new Uint8Array(e.target.result);
+
+        const workbook =
+          XLSX.read(data, { type: "array" });
+
+        const sheet =
+          workbook.Sheets[workbook.SheetNames[0]];
+
+        rows =
+          XLSX.utils.sheet_to_json(
+            sheet,
+            { header: 1, defval: "" }
+          );
+
+      }
+
+
+      /* ---------- Format lain ---------- */
+
+      else {
+
+        alert(
+          "Format file tidak didukung.\n" +
+          "Gunakan .csv, .xlsx, atau .xls"
+        );
+
+        return;
+
+      }
+
+
+      processImportRows(rows);
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert("Gagal membaca file: " + err.message);
+
+    } finally {
+
+      /* Reset supaya file yang sama bisa diimport ulang */
+
+      event.target.value = "";
+
+    }
+
+  };
+
+
+  if (ext === "csv") {
+    reader.readAsText(file, "UTF-8");
+  } else {
+    reader.readAsArrayBuffer(file);
+  }
+
+}
+
+
+/* --------------------------------------------------
+   Proses baris hasil pembacaan
+   -------------------------------------------------- */
+
+function processImportRows(rows) {
+
+  if (!rows || rows.length < 2) {
+
+    alert(
+      "File kosong atau tidak memiliki baris data.\n" +
+      "Baris pertama harus berisi nama kolom."
+    );
+
+    return;
+
+  }
+
+
+  const headerRow = rows[0];
+  const dataRows = rows.slice(1);
+
+
+  const headerMap =
+    buildHeaderMap(headerRow);
+
+
+  /* Validasi kolom wajib */
+
+  if (
+    headerMap.namaPeserta === undefined ||
+    headerMap.namaMasjid === undefined
+  ) {
+
+    alert(
+      'Kolom "Nama Peserta" dan "Nama Masjid" wajib ada di baris pertama file.\n\n' +
+      'Silakan klik tombol "⬇ Template" untuk melihat contoh format yang benar.'
+    );
+
+    return;
+
+  }
+
+
+  const imported = [];
+  let skipped = 0;
+
+
+  dataRows.forEach(row => {
+
+  const namaPeserta =
+    String(row[headerMap.namaPeserta] || "").trim();
+
+  const namaMasjid =
+    String(row[headerMap.namaMasjid] || "").trim();
+
+  if (!namaPeserta || !namaMasjid) {
+    skipped++;
+    return;
+  }
+
+  const response = {
+    id: Date.now() + Math.random(),
+    namaPeserta,
+    namaMasjid
+  };
+
+
+  /* ---------- Loop DINAMIS mengikuti array `questions` ---------- */
+
+  questions.forEach(item => {
+
+    if (item.type === "section") return;
+
+    const key = "q" + item.number;
+    const colIndex = headerMap[key];
+
+    /* Kolom tidak ada di file */
+    if (colIndex === undefined) {
+      response[key] = item.type === "checkbox" ? [] : "";
+      return;
+    }
+
+    const raw = String(row[colIndex] || "").trim();
+
+
+    /* ---------- Checkbox ---------- */
+    /* PENTING: menerima "|" DAN ";" sebagai separator
+       supaya file lama (yang pakai ";") tetap kompatibel. */
+
+    if (item.type === "checkbox") {
+
+      if (!raw) {
+        response[key] = [];
+      } else {
+        response[key] = raw
+          .split(/[|;]/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+      }
+
+      return;
+
+    }
+
+
+    /* ---------- Radio ---------- */
+    response[key] = raw;
+
+  });
+
+
+  imported.push(response);
+
+});
+
+
+  if (imported.length === 0) {
+
+    alert(
+      "Tidak ada baris valid yang dapat diimpor.\n" +
+      "Pastikan kolom Nama Peserta dan Nama Masjid terisi."
+    );
+
+    return;
+
+  }
+
+
+  const confirmed = confirm(
+
+    `Ditemukan ${imported.length} baris valid` +
+
+    (skipped > 0
+      ? ` (${skipped} baris dilewati karena tidak lengkap)`
+      : "") +
+
+    ".\n\n" +
+
+    "Klik OK untuk MENAMBAHKAN ke data yang sudah ada.\n" +
+    "Klik Cancel untuk membatalkan."
+
+  );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  responses = responses.concat(imported);
+
+
+  localStorage.setItem(
+    "kuesionerMasjid",
+    JSON.stringify(responses)
+  );
+
+
+  renderTable();
+  renderCharts();
+
+
+  alert(
+    `Berhasil mengimpor ${imported.length} responden.\n` +
+    `Total data sekarang: ${responses.length} responden.`
+  );
+
+}

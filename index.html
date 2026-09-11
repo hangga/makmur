@@ -17,10 +17,44 @@
       <p>Data responden dan kondisi masjid</p>
     </div>
 
-    <button class="btn btn-primary" onclick="openForm()">
-      + Tambah Responden
-    </button>
+    <div class="header-actions">
+
+      <button
+        type="button"
+        class="btn btn-outline"
+        onclick="downloadTemplate()"
+        title="Unduh contoh format import"
+      >
+        ⬇ Template
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-outline"
+        onclick="triggerImport()"
+      >
+        📥 Import Excel / CSV
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        onclick="openForm()"
+      >
+        + Tambah Responden
+      </button>
+
+    </div>
   </div>
+
+  <!-- Input file tersembunyi untuk import -->
+  <input
+    type="file"
+    id="importFile"
+    accept=".csv,.xlsx,.xls"
+    hidden
+    onchange="handleImportFile(event)"
+  >
 
 
   <!-- TAB NAVIGASI -->
@@ -82,6 +116,8 @@
               <th>Kendala Takmir</th>
               <th>Solusi</th>
               <th>Impian Jamaah</th>
+              <th>Usia Imam Termuda</th>   <!-- TAMBAH -->
+              <th>Usia Imam Tertua</th>    <!-- TAMBAH -->
               <th>Aksi</th>
             </tr>
           </thead>
