@@ -914,6 +914,188 @@ function switchPage(page) {
 
 }
 
+/* ==================================================
+   PANEL METODOLOGI (TRANSPARANSI FORMULA)
+   ================================================== */
+
+function buildMethodologyHTML() {
+  return `
+    <details class="methodology">
+      <summary>
+        <span class="methodology-icon">Σ</span>
+        Metodologi &amp; Formula Perhitungan
+      </summary>
+      <div class="methodology-body">
+
+        <h4>1. Indeks Kemakmuran Masjid (IKM)</h4>
+        <p>
+          IKM adalah skor gabungan berskala <strong>0–100</strong> yang dihitung
+          dari lima dimensi dengan bobot masing-masing. Skor akhir adalah
+          <em>rata-rata dari skor tiap responden</em>, karena setiap responden
+          mewakili satu masjid.
+        </p>
+
+        <div class="formula-box">
+          <span class="var">IKM</span> <span class="op">=</span>
+          (<span class="num">0.35</span> <span class="op">×</span> <span class="var">Vitalitas</span>)
+          <span class="op">+</span>
+          (<span class="num">0.20</span> <span class="op">×</span> <span class="var">Usia</span>)
+          <span class="op">+</span>
+          (<span class="num">0.20</span> <span class="op">×</span> <span class="var">Kepemimpinan</span>)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="op">+</span>
+          (<span class="num">0.15</span> <span class="op">×</span> <span class="var">Jangkauan</span>)
+          <span class="op">+</span>
+          (<span class="num">0.10</span> <span class="op">×</span> <span class="var">Partisipasi</span>)
+        </div>
+
+        <h4>2. Bobot &amp; Sumber Data Tiap Dimensi</h4>
+        <table class="weight-table">
+          <thead>
+            <tr>
+              <th>Dimensi</th>
+              <th>Bobot</th>
+              <th>Sumber Pertanyaan</th>
+              <th>Cara Menghitung Skor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Vitalitas Jamaah</strong></td>
+              <td class="w-value">35%</td>
+              <td>Q6–Q10 (jamaah per waktu shalat)</td>
+              <td>Rata-rata jamaah ÷ 60 × 100, dibatasi 100</td>
+            </tr>
+            <tr>
+              <td><strong>Keseimbangan Usia</strong></td>
+              <td class="w-value">20%</td>
+              <td>Q11–Q15 (jamaah per kelompok usia)</td>
+              <td>Rata-rata per kelompok ÷ 35 × 100 (remaja ÷ 20)</td>
+            </tr>
+            <tr>
+              <td><strong>Regenerasi Kepemimpinan</strong></td>
+              <td class="w-value">20%</td>
+              <td>Q4, Q5, Q21, Q22 (usia ketua, pengurus, imam)</td>
+              <td>Kurva usia ideal (lihat poin 3)</td>
+            </tr>
+            <tr>
+              <td><strong>Jangkauan Dakwah</strong></td>
+              <td class="w-value">15%</td>
+              <td>Q16 (wilayah dakwah)</td>
+              <td>Jumlah warga ÷ 500 × 100, dibatasi 100</td>
+            </tr>
+            <tr>
+              <td><strong>Partisipasi Aktif</strong></td>
+              <td class="w-value">10%</td>
+              <td>Q3 (frekuensi shalat berjamaah/pekan)</td>
+              <td>Frekuensi ÷ 30 × 100, dibatasi 100</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>3. Formula Skor Usia (Kurva Non-Linier)</h4>
+        <p>
+          Usia <em>terlalu muda</em> maupun <em>terlalu tua</em> sama-sama
+          dikurangi skornya — yang ideal adalah usia produktif di sekitar titik
+          puncak. Semakin jauh dari titik ideal, semakin besar penalti.
+        </p>
+
+        <div class="formula-box">
+          <span class="var">SkorUsia</span> <span class="op">=</span>
+          <span class="op">max(</span><span class="num">0</span>,
+          <span class="num">100</span>
+          <span class="op">−</span>
+          <span class="op">|</span><span class="var">Usia</span>
+          <span class="op">−</span> <span class="var">Ideal</span><span class="op">|</span>
+          <span class="op">×</span> <span class="var">Penalti</span><span class="op">)</span>
+        </div>
+
+        <table class="weight-table">
+          <thead>
+            <tr>
+              <th>Variabel</th>
+              <th>Usia Ideal</th>
+              <th>Penalti / tahun</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Usia Ketua Takmir (Q4) &amp; Rata-rata Pengurus (Q5)</td>
+                <td class="w-value">42 tahun</td><td>2.4 poin</td></tr>
+            <tr><td>Usia Imam Termuda (Q21)</td>
+                <td class="w-value">27 tahun</td><td>2.8 poin</td></tr>
+            <tr><td>Usia Imam Tertua (Q22)</td>
+                <td class="w-value">45 tahun</td><td>1.8 poin</td></tr>
+          </tbody>
+        </table>
+
+        <h4>4. Ekstraksi Angka dari Range Jawaban</h4>
+        <p class="muted">
+          Jawaban seperti <code>"20–30 orang"</code> diubah menjadi
+          <code>25</code> (titik tengah). Jawaban tunggal seperti
+          <code>"≤ 5 orang"</code> diubah menjadi <code>5</code>.
+          Jawaban <code>"Tidak ada"</code> dihitung sebagai <code>0</code>.
+        </p>
+
+        <h4>5. Kategori IKM</h4>
+        <ul class="cat-list">
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#16a34a">Sangat Makmur</span>
+            <span class="cat-range">80 – 100</span>
+            <span>Masjid ideal: jamaah ramai, regenerasi berjalan, jangkauan luas.</span>
+          </li>
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#2563eb">Makmur</span>
+            <span class="cat-range">65 – 79</span>
+            <span>Kondisi baik dengan ruang perbaikan di beberapa dimensi.</span>
+          </li>
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#f59e0b">Cukup Makmur</span>
+            <span class="cat-range">50 – 64</span>
+            <span>Masih dapat ditingkatkan; perlu perhatian pada dimensi terlemah.</span>
+          </li>
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#ea580c">Kurang Makmur</span>
+            <span class="cat-range">35 – 49</span>
+            <span>Perlu pembenahan serius pada beberapa dimensi sekaligus.</span>
+          </li>
+          <li class="cat-item">
+            <span class="cat-badge" style="background:#dc2626">Perlu Pembenahan</span>
+            <span class="cat-range">0 – 34</span>
+            <span>Masalah mendasar; butuh pendampingan intensif &amp; strategi ulang.</span>
+          </li>
+        </ul>
+
+        <h4>6. Metodologi Ranking Masalah, Kendala, Solusi &amp; Impian</h4>
+        <p>
+          Untuk pertanyaan <em>checkbox</em> (Q17–Q20), setiap pilihan dihitung
+          frekuensinya di seluruh responden, lalu diurutkan dari yang paling
+          sering dipilih. Persentase dihitung sebagai:
+        </p>
+        <div class="formula-box">
+          <span class="var">Persentase</span> <span class="op">=</span>
+          (<span class="var">Jumlah pemilih opsi</span>
+          <span class="op">÷</span> <span class="var">Total responden</span>)
+          <span class="op">×</span> <span class="num">100%</span>
+        </div>
+        <p class="muted">
+          Karena satu responden boleh memilih lebih dari satu opsi, total
+          persentase bisa melebihi 100% &mdash; ini normal dan menunjukkan
+          intensitas pilihan.
+        </p>
+
+        <h4>7. Catatan Interpretasi</h4>
+        <ul>
+          <li>IKM bersifat <strong>komparatif</strong>: bandingkan antar waktu atau antar kelompok masjid, bukan sebagai nilai absolut.</li>
+          <li>Bobot dapat disesuaikan dengan konteks wilayah (misalnya vitalitas jamaah lebih dominan di perkotaan).</li>
+          <li>Responden yang tidak mengisi pertanyaan tertentu tidak dihitung pada dimensi terkait (<em>missing data handling</em>).</li>
+          <li>Untuk validitas lebih tinggi, disarankan minimal <strong>10 responden</strong> per kelompok analisis.</li>
+        </ul>
+
+      </div>
+    </details>
+  `;
+}
+
 
 /* ==================================================
    WARNA GRAFIK
@@ -2490,6 +2672,8 @@ function renderAnalysis() {
         </div>
 
       </div>
+
+      ${buildMethodologyHTML()}
     </div>
   `;
 }
