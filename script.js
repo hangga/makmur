@@ -294,6 +294,32 @@ const questions = [
       "Semakin banyak kegiatan positif di masjid",
       "Kondisi saat ini sudah baik"
     ]
+  },
+
+  {
+    type: "radio",
+    number: 21,
+    question: "Berapa usia Imam termuda di masjid Anda?",
+    options: [
+      "≤ 20 tahun",
+      "20–25 tahun",
+      "25–30 tahun",
+      "30–35 tahun",
+      "35–40 tahun"
+    ]
+  },
+
+  {
+    type: "radio",
+    number: 22,
+    question: "Berapa usia Imam tertua di masjid Anda?",
+    options: [
+      "30-40 tahun",
+      "40–50 tahun",
+      "50–60 tahun",
+      "60–70 tahun",
+      "≥ 70 tahun"
+    ]
   }
 
 ];
@@ -703,7 +729,7 @@ function renderTable() {
 
     tbody.innerHTML = `
       <tr>
-        <td colspan="24" class="empty">
+        <td colspan="26" class="empty">
           Belum ada data responden.
           Klik "Tambah Responden" untuk memasukkan data.
         </td>
@@ -745,6 +771,8 @@ function renderTable() {
       <td>${formatArray(data.q18)}</td>
       <td>${formatArray(data.q19)}</td>
       <td>${formatArray(data.q20)}</td>
+      <td>${escapeHTML(data.q21)}</td>   <!-- TAMBAH -->
+      <td>${escapeHTML(data.q22)}</td>   <!-- TAMBAH -->
       <td>
         <div class="action-buttons">
           <button
@@ -949,14 +977,17 @@ function radioCounts(number) {
 function checkboxCounts(number) {
 
   const q = getQuestion(number);
+  if (!q) return [];
 
-  if (!q) {
-    return [];
-  }
+  /* Normalisasi nilai supaya cocok walau ada spasi / dash berbeda */
+
+  const normalize = s =>
+    String(s).trim().replace(/\s+/g, " ");
 
 
   return q.options.map(option => {
 
+    const normOption = normalize(option);
     let count = 0;
 
     responses.forEach(data => {
@@ -965,17 +996,14 @@ function checkboxCounts(number) {
 
       if (
         Array.isArray(selected) &&
-        selected.includes(option)
+        selected.some(v => normalize(v) === normOption)
       ) {
         count++;
       }
 
     });
 
-    return {
-      label: option,
-      value: count
-    };
+    return { label: option, value: count };
 
   });
 
@@ -1543,6 +1571,21 @@ function renderCharts() {
           note: "Responden dapat memilih lebih dari satu jawaban."
         }
       ]
+    },
+
+    {
+      title: "13. Usia Imam di Masjid Anda",
+
+      charts: [
+        {
+          title: "13. Usia Imam Termuda",
+          counts: radioCounts(21)
+        },
+        {
+          title: "14. Usia Imam Tertua",
+          counts: radioCounts(22)
+        }
+      ]
     }
 
   ];
@@ -1638,7 +1681,11 @@ const COLUMN_ALIASES = {
   q17: ["q17", "problematikamasyarakat", "problematika"],
   q18: ["q18", "kendalatakmir", "kendala"],
   q19: ["q19", "solusi"],
-  q20: ["q20", "impianjamaah", "impian"]
+  q20: ["q20", "impianjamaah", "impian"],
+
+  /* TAMBAH: */
+  q21: ["q21", "usiaimamtermuda", "imamtermuda", "usiatermuda"],
+  q22: ["q22", "usiaimamtertua", "imamtertua", "usiatertua"]
 
 };
 
@@ -1727,7 +1774,9 @@ function downloadTemplate() {
     "Problematika Masyarakat",
     "Kendala Takmir",
     "Solusi",
-    "Impian Jamaah"
+    "Impian Jamaah",
+    "Usia Imam Termuda",   /* TAMBAH */
+    "Usia Imam Tertua"     /* TAMBAH */
   ];
 
   const example = [
@@ -1749,35 +1798,37 @@ function downloadTemplate() {
     "10–20 orang",
     "≤ 5 orang",
     "100–200 orang",
-    "Masalah ekonomi; Kenakalan remaja",
+    /* PENTING: pakai "|" bukan ";" */
+    "Masalah ekonomi|Kenakalan remaja",
     "Minimnya keterlibatan generasi muda",
     "Pelatihan manajemen masjid",
-    "Jumlah jamaah semakin bertambah"
+    "Jumlah jamaah semakin bertambah",
+    "25–30 tahun",       /* TAMBAH */
+    "60–70 tahun"        /* TAMBAH */
   ];
 
 
-  const csvRows = [headers, example].map(row =>
+  /* Quote SELALU kalau mengandung karakter berbahaya:
+     koma, titik-koma, pipe, petik, atau newline. */
 
-    row.map(cell => {
+  function csvEscape(cell) {
 
-      const s = String(cell);
+    const s = String(cell);
 
-      if (
-        s.includes(",") ||
-        s.includes('"') ||
-        s.includes("\n")
-      ) {
-        return '"' + s.replace(/"/g, '""') + '"';
-      }
+    if (/[",;|\n\r]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
 
-      return s;
+    return s;
 
-    }).join(",")
-
-  ).join("\r\n");
+  }
 
 
-  /* BOM agar Excel membaca UTF-8 dengan benar */
+  const csvRows =
+    [headers, example]
+      .map(row => row.map(csvEscape).join(","))
+      .join("\r\n");
+
 
   const blob = new Blob(
     ["\ufeff" + csvRows],
@@ -1805,27 +1856,44 @@ function downloadTemplate() {
 
 function parseCSV(text) {
 
-  /* Buang BOM jika ada */
-
   if (text.charCodeAt(0) === 0xFEFF) {
     text = text.slice(1);
   }
 
 
-  /* Deteksi otomatis delimiter */
+  /* ---------- Deteksi delimiter yang lebih pintar ---------- */
+  /* Cek 5 baris pertama, abaikan karakter di dalam tanda kutip */
 
-  const firstLine =
-    text.split(/\r?\n/)[0] || "";
+  const sampleLines =
+    text.split(/\r?\n/).slice(0, 5).filter(l => l.trim() !== "");
 
-  const semicolons =
-    (firstLine.match(/;/g) || []).length;
+  let commaCount = 0;
+  let semicolonCount = 0;
 
-  const commas =
-    (firstLine.match(/,/g) || []).length;
+  sampleLines.forEach(line => {
+
+    let inQuotes = false;
+
+    for (let k = 0; k < line.length; k++) {
+
+      const ch = line[k];
+
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (!inQuotes) {
+        if (ch === ",") commaCount++;
+        else if (ch === ";") semicolonCount++;
+      }
+
+    }
+
+  });
 
   const delimiter =
-    semicolons > commas ? ";" : ",";
+    semicolonCount > commaCount ? ";" : ",";
 
+
+  /* ---------- Parsing ---------- */
 
   const rows = [];
   let row = [];
@@ -1840,30 +1908,12 @@ function parseCSV(text) {
     const next = text[i + 1];
 
     if (inQuotes) {
-
-      if (c === '"' && next === '"') {
-        field += '"';
-        i += 2;
-        continue;
-      }
-
-      if (c === '"') {
-        inQuotes = false;
-        i++;
-        continue;
-      }
-
-      field += c;
-      i++;
-      continue;
-
+      if (c === '"' && next === '"') { field += '"'; i += 2; continue; }
+      if (c === '"') { inQuotes = false; i++; continue; }
+      field += c; i++; continue;
     }
 
-    if (c === '"') {
-      inQuotes = true;
-      i++;
-      continue;
-    }
+    if (c === '"') { inQuotes = true; i++; continue; }
 
     if (c === delimiter) {
       row.push(field);
@@ -1873,18 +1923,13 @@ function parseCSV(text) {
     }
 
     if (c === "\r" || c === "\n") {
-
-      if (c === "\r" && next === "\n") {
-        i++;
-      }
-
+      if (c === "\r" && next === "\n") i++;
       row.push(field);
       rows.push(row);
       row = [];
       field = "";
       i++;
       continue;
-
     }
 
     field += c;
@@ -1898,12 +1943,9 @@ function parseCSV(text) {
   }
 
 
-  return rows.filter(r =>
-    r.some(c => String(c).trim() !== "")
-  );
+  return rows.filter(r => r.some(c => String(c).trim() !== ""));
 
 }
-
 
 /* --------------------------------------------------
    Handler pemilihan file
@@ -2064,77 +2106,71 @@ function processImportRows(rows) {
 
   dataRows.forEach(row => {
 
-    const namaPeserta =
-      String(row[headerMap.namaPeserta] || "").trim();
+  const namaPeserta =
+    String(row[headerMap.namaPeserta] || "").trim();
 
-    const namaMasjid =
-      String(row[headerMap.namaMasjid] || "").trim();
+  const namaMasjid =
+    String(row[headerMap.namaMasjid] || "").trim();
+
+  if (!namaPeserta || !namaMasjid) {
+    skipped++;
+    return;
+  }
+
+  const response = {
+    id: Date.now() + Math.random(),
+    namaPeserta,
+    namaMasjid
+  };
 
 
-    if (!namaPeserta || !namaMasjid) {
-      skipped++;
+  /* ---------- Loop DINAMIS mengikuti array `questions` ---------- */
+
+  questions.forEach(item => {
+
+    if (item.type === "section") return;
+
+    const key = "q" + item.number;
+    const colIndex = headerMap[key];
+
+    /* Kolom tidak ada di file */
+    if (colIndex === undefined) {
+      response[key] = item.type === "checkbox" ? [] : "";
       return;
     }
 
-
-    const response = {
-
-      id: Date.now() + Math.random(),
-
-      namaPeserta,
-      namaMasjid
-
-    };
+    const raw = String(row[colIndex] || "").trim();
 
 
-    /* q1 – q16 : pilihan tunggal */
+    /* ---------- Checkbox ---------- */
+    /* PENTING: menerima "|" DAN ";" sebagai separator
+       supaya file lama (yang pakai ";") tetap kompatibel. */
 
-    for (let n = 1; n <= 16; n++) {
-
-      const key = "q" + n;
-      const colIndex = headerMap[key];
-
-      if (colIndex === undefined) {
-        response[key] = "";
-        continue;
-      }
-
-      response[key] =
-        String(row[colIndex] || "").trim();
-
-    }
-
-
-    /* q17 – q20 : pilihan ganda (dipisah ";" atau "|") */
-
-    for (let n = 17; n <= 20; n++) {
-
-      const key = "q" + n;
-      const colIndex = headerMap[key];
-
-      if (colIndex === undefined) {
-        response[key] = [];
-        continue;
-      }
-
-      const raw =
-        String(row[colIndex] || "").trim();
+    if (item.type === "checkbox") {
 
       if (!raw) {
         response[key] = [];
       } else {
         response[key] = raw
-          .split(/[;|]/)
+          .split(/[|;]/)
           .map(s => s.trim())
           .filter(s => s.length > 0);
       }
 
+      return;
+
     }
 
 
-    imported.push(response);
+    /* ---------- Radio ---------- */
+    response[key] = raw;
 
   });
+
+
+  imported.push(response);
+
+});
 
 
   if (imported.length === 0) {
