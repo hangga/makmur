@@ -908,6 +908,7 @@ function switchPage(page) {
 
   if (page === "charts") {
     renderCharts();
+    renderAnalysis();
   }
 
 }
@@ -2225,3 +2226,276 @@ function processImportRows(rows) {
   );
 
 }
+
+/* ==================================================
+   MODUL ANALISIS OTOMATIS
+   ================================================== */
+
+/* ---- Helper: ekstrak angka tengah dari range "20–30 orang" ---- */
+function extractMidNumber(value) {
+  if (value === undefined || value === null || value === "") return 0;
+  const s = String(value);
+  if (/tidak\s*ada/i.test(s)) return 0;
+  const matches = s.match(/\d+/g);
+  if (!matches) return 0;
+  const nums = matches.map(Number);
+  if (nums.length >= 2) return (nums[0] + nums[1]) / 2;
+  return nums[0] || 0;
+}
+
+/* ---- Skor linear: nilai / max × 100, dibatasi 0–100 ---- */
+function scoreLinear(value, max) {
+  const n = extractMidNumber(value);
+  if (n <= 0) return 0;
+  return Math.min(100, (n / max) * 100);
+}
+
+/* ---- Skor kurva usia: ideal di `ideal`, spread = penalti per tahun ---- */
+function scoreAge(value, ideal, spread) {
+  const age = extractMidNumber(value);
+  if (age <= 0) return 0;
+  return Math.max(0, 100 - Math.abs(age - ideal) * spread);
+}
+
+/* ---- Skor per nomor pertanyaan ---- */
+function scoreQuestion(number, value) {
+  if (value === undefined || value === null || value === "") return null;
+  switch (number) {
+    case 6: case 7: case 8: case 9: case 10:
+      return scoreLinear(value, 60);      // jamaah / waktu shalat
+    case 11: case 13: case 14: case 15:
+      return scoreLinear(value, 35);      // kelompok usia jamaah
+    case 12:
+      return scoreLinear(value, 20);      // remaja
+    case 16:
+      return scoreLinear(value, 500);     // wilayah dakwah
+    case 3:
+      return scoreLinear(value, 30);      // frekuensi shalat
+    case 4: case 5:
+      return scoreAge(value, 42, 2.4);    // usia kepemimpinan ideal ~42
+    case 21:
+      return scoreAge(value, 27, 2.8);    // imam termuda ideal ~27
+    case 22:
+      return scoreAge(value, 45, 1.8);    // imam tertua ideal ~45
+  }
+  return null;
+}
+
+/* ---- Hitung IKM per responden ---- */
+function calculateIKM(response) {
+  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+
+  const vitalitas = [6,7,8,9,10]
+    .map(n => scoreQuestion(n, response["q"+n]))
+    .filter(s => s !== null);
+
+  const usia = [11,12,13,14,15]
+    .map(n => scoreQuestion(n, response["q"+n]))
+    .filter(s => s !== null);
+
+  const kepemimpinan = [4,5,21,22]
+    .map(n => scoreQuestion(n, response["q"+n]))
+    .filter(s => s !== null);
+
+  const jangkauan    = scoreQuestion(16, response.q16) ?? 0;
+  const partisipasi  = scoreQuestion(3,  response.q3)  ?? 0;
+
+  const parts = {
+    vitalitas:    avg(vitalitas),
+    usia:         avg(usia),
+    kepemimpinan: avg(kepemimpinan),
+    jangkauan:    jangkauan,
+    partisipasi:  partisipasi
+  };
+
+  const weights = {
+    vitalitas: 0.35, usia: 0.20,
+    kepemimpinan: 0.20, jangkauan: 0.15, partisipasi: 0.10
+  };
+
+  let total = 0;
+  for (const k in weights) total += parts[k] * weights[k];
+
+  return { total: Math.round(total), parts };
+}
+
+/* ---- Kategori IKM ---- */
+function kategoriIKM(score) {
+  if (score >= 80) return { label: "Sangat Makmur",     color: "#16a34a" };
+  if (score >= 65) return { label: "Makmur",            color: "#2563eb" };
+  if (score >= 50) return { label: "Cukup Makmur",      color: "#f59e0b" };
+  if (score >= 35) return { label: "Kurang Makmur",     color: "#ea580c" };
+  return              { label: "Perlu Pembenahan", color: "#dc2626" };
+}
+
+/* ---- Rata-rata IKM semua responden ---- */
+function averageIKM() {
+  if (responses.length === 0) return null;
+  const scores = responses.map(r => calculateIKM(r).total);
+  return Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+}
+
+/* ---- Ranking jawaban checkbox (top N) ---- */
+function rankCheckbox(number, topN) {
+  topN = topN || 5;
+  return checkboxCounts(number)
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, topN);
+}
+
+/* ---- Gauge SVG setengah lingkaran ---- */
+function buildGaugeSVG(score, size) {
+  size = size || 200;
+  const strokeW = 14;
+  const r  = size / 2 - strokeW;
+  const cx = size / 2;
+  const cy = size / 2 + 4;
+
+  const angleFor = pct => Math.PI + (pct / 100) * Math.PI;
+
+  const pt = a => ({
+    x: cx + r * Math.cos(a),
+    y: cy + r * Math.sin(a)
+  });
+
+  const start = pt(Math.PI);
+  const end   = pt(2 * Math.PI);
+  const cur   = pt(angleFor(score));
+
+  const largeArc = score > 50 ? 1 : 0;
+
+  return `
+    <svg viewBox="0 0 ${size} ${size * 0.62}"
+         width="${size}" height="${size * 0.62}"
+         style="display:block;margin:0 auto">
+      <path d="M ${start.x} ${start.y}
+               A ${r} ${r} 0 0 1 ${end.x} ${end.y}"
+            fill="none" stroke="rgba(255,255,255,0.22)"
+            stroke-width="${strokeW}" stroke-linecap="round"/>
+      ${score > 0 ? `
+      <path d="M ${start.x} ${start.y}
+               A ${r} ${r} 0 ${largeArc} 1 ${cur.x} ${cur.y}"
+            fill="none" stroke="white"
+            stroke-width="${strokeW}" stroke-linecap="round"/>` : ""}
+    </svg>
+  `;
+}
+
+/* ---- Render kartu ranking (checkbox) ---- */
+function buildRankCard(title, icon, counts, cssClass) {
+  const totalResp = responses.length;
+
+  if (counts.length === 0) {
+    return `
+      <div class="insight-card ${cssClass}">
+        <h3>${icon} ${escapeHTML(title)}</h3>
+        <div class="rank-empty">Belum ada data</div>
+      </div>`;
+  }
+
+  const list = counts.map((item, i) => {
+    const pct = totalResp
+      ? Math.round((item.value / totalResp) * 100)
+      : 0;
+    return `
+      <li class="rank-item">
+        <span class="rank-num">${i + 1}</span>
+        <span class="rank-text">${escapeHTML(item.label)}</span>
+        <span class="rank-meta">${item.value}× · ${pct}%</span>
+      </li>`;
+  }).join("");
+
+  return `
+    <div class="insight-card ${cssClass}">
+      <h3>${icon} ${escapeHTML(title)}</h3>
+      <ul class="rank-list">${list}</ul>
+    </div>`;
+}
+
+/* ---- Render seluruh panel analisis ---- */
+function renderAnalysis() {
+  const container = document.getElementById("analysisContainer");
+  if (!container) return;
+
+  if (responses.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const ikm = averageIKM();
+  const kat = kategoriIKM(ikm);
+
+  /* Agregasi komponen rata-rata untuk breakdown */
+  const allParts = responses.map(r => calculateIKM(r).parts);
+  const avgPart = key =>
+    Math.round(allParts.reduce((s, p) => s + p[key], 0) / allParts.length);
+
+  const parts = {
+    "Vitalitas Jamaah":       avgPart("vitalitas"),
+    "Keseimbangan Usia":      avgPart("usia"),
+    "Regenerasi Kepemimpinan":avgPart("kepemimpinan"),
+    "Jangkauan Dakwah":       avgPart("jangkauan"),
+    "Partisipasi Aktif":      avgPart("partisipasi")
+  };
+
+  const breakdownHTML = Object.entries(parts).map(([label, val]) => `
+    <div class="ikm-comp">
+      <span class="ikm-comp-label">${label}</span>
+      <span class="ikm-comp-bar">
+        <span class="ikm-comp-fill" style="width:${val}%"></span>
+      </span>
+      <span class="ikm-comp-val">${val}</span>
+    </div>`).join("");
+
+  const problemTop    = rankCheckbox(17, 5);
+  const constraintTop = rankCheckbox(18, 5);
+  const solutionTop   = rankCheckbox(19, 5);
+  const dreamTop      = rankCheckbox(20, 5);
+
+  container.innerHTML = `
+    <div class="analysis-section">
+
+      <h2 style="margin:0 0 8px;padding-left:12px;font-size:21px;border-left:5px solid #2563eb">
+        Ringkasan Analisis
+      </h2>
+      <p class="section-desc" style="margin-left:17px">
+        Dihitung otomatis dari ${responses.length} responden berdasarkan formula
+        Indeks Kemakmuran Masjid (IKM) berbobot 5 dimensi.
+      </p>
+
+      <div class="analysis-hero">
+
+        <div class="ikm-card">
+          <h3>Indeks Kemakmuran Masjid</h3>
+
+          ${buildGaugeSVG(ikm, 210)}
+
+          <div class="ikm-score" style="margin-top:-30px">${ikm}</div>
+          <div class="ikm-score-label">dari 100</div>
+
+          <div class="ikm-category" style="background:${kat.color}">
+            ${kat.label}
+          </div>
+
+          <div class="ikm-breakdown">${breakdownHTML}</div>
+        </div>
+
+        <div class="insight-grid">
+          ${buildRankCard("Masalah Terbesar Masyarakat", "🔴", problemTop,    "problem")}
+          ${buildRankCard("Kendala Terbesar Takmir",     "🟠", constraintTop, "constraint")}
+          ${buildRankCard("Solusi Prioritas",            "🟢", solutionTop,   "solution")}
+          ${buildRankCard("Impian Utama Jamaah & Takmir","🟣", dreamTop,      "dream")}
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+/* ---- Panggil renderAnalysis dari renderCharts ---- */
+const _originalRenderCharts = renderCharts;
+renderCharts = function () {
+  _originalRenderCharts();
+  renderAnalysis();
+};
