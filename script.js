@@ -907,8 +907,9 @@ function switchPage(page) {
 
 
   if (page === "charts") {
-    renderCharts();
     renderAnalysis();
+    renderCharts();
+    
   }
 
 }
