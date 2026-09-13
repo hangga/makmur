@@ -35,15 +35,23 @@ Jawaban dari pertanyaan-pertanyaan tersebut kemudian diolah menjadi **Indeks Kem
 
 ## Siapa yang menggunakan?
 
-Aplikasi ini ditujukan terutama untuk pihak yang melakukan **pemetaan dan evaluasi masjid**, seperti:
+Aplikasi ini telah digunakan dalam kegiatan **Sarasehan Takmir Masjid se-Kotagede** yang diselenggarakan oleh **MTDK & MPKSDI PCM Kotagede** pada **Jumat, 11 September 2026** di **RM Sekar Kedhaton**. Dalam kegiatan tersebut, aplikasi digunakan untuk membantu proses pemetaan dan evaluasi kondisi masjid berdasarkan data yang dikumpulkan melalui kuesioner.
+
+Meskipun dikembangkan dan digunakan dalam konteks pemetaan masjid di wilayah **Kotagede**, aplikasi ini juga dapat dimanfaatkan oleh berbagai pihak yang membutuhkan proses pendataan, pemetaan, dan evaluasi masjid secara lebih terstruktur, seperti:
 
 * Tim pemetaan masjid
 * Pengurus atau lembaga yang melakukan pendataan masjid
 * Takmir masjid
 * Tim pembinaan dan pendampingan masjid
+* Organisasi atau lembaga keagamaan
 * Peneliti atau pihak yang melakukan kajian kondisi masjid
+* Pemerintah atau lembaga lain yang membutuhkan data dan gambaran kondisi masjid
 
-Dalam penggunaannya, kuesioner dibagikan kepada masjid-masjid di wilayah **Kotagede**. Jawaban kemudian dimasukkan ke aplikasi untuk dianalisis secara terpusat pada perangkat yang digunakan untuk pengolahan data.
+Dalam penggunaannya, kuesioner dapat dibagikan kepada masjid-masjid di wilayah tertentu. Jawaban yang terkumpul kemudian dimasukkan ke dalam aplikasi untuk diolah dan dianalisis secara terpusat pada perangkat yang digunakan untuk pengolahan data.
+
+Dengan demikian, aplikasi ini tidak terbatas untuk pemetaan masjid di Kotagede saja, tetapi dapat digunakan sebagai **alat bantu pemetaan dan evaluasi masjid di wilayah lain**, dengan menyesuaikan kebutuhan pertanyaan, indikator, dan cakupan wilayah yang dipetakan.
+
+<img src="https://github.com/hangga/makmur/blob/main/sarasehan-takmir-se-kotagede.jpeg"/>
 
 ---
 
