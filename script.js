@@ -334,6 +334,8 @@ let responses =
 
 let editingIndex = null;
 
+let searchQuery = "";      
+
 
 /* ==================================================
    ELEMENTS
@@ -712,6 +714,95 @@ questionnaireForm.addEventListener("submit", function (event) {
 
 });
 
+/* ==================================================
+   SEARCH / FILTER TABEL
+   ================================================== */
+
+function handleSearch() {
+
+  const input =
+    document.getElementById("searchInput");
+
+  searchQuery =
+    input ? input.value.trim().toLowerCase() : "";
+
+  const clearBtn =
+    document.getElementById("searchClear");
+
+  if (clearBtn) {
+    clearBtn.hidden = searchQuery.length === 0;
+  }
+
+  renderTable();
+}
+
+
+function clearSearch() {
+
+  const input =
+    document.getElementById("searchInput");
+
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+
+  searchQuery = "";
+
+  const clearBtn =
+    document.getElementById("searchClear");
+
+  if (clearBtn) {
+    clearBtn.hidden = true;
+  }
+
+  renderTable();
+}
+
+
+function getFilteredResponses() {
+
+  const indexed =
+    responses.map((data, index) => ({ data, index }));
+
+  if (!searchQuery) {
+    return indexed;
+  }
+
+  return indexed.filter(({ data }) => {
+
+    const parts = [
+      data.namaPeserta,
+      data.namaMasjid,
+      data.q1,  data.q2,  data.q3,  data.q4,  data.q5,
+      data.q6,  data.q7,  data.q8,  data.q9,  data.q10,
+      data.q11, data.q12, data.q13, data.q14, data.q15,
+      data.q16, data.q21, data.q22
+    ];
+
+    [17, 18, 19, 20].forEach(n => {
+      const v = data[`q${n}`];
+      if (Array.isArray(v)) {
+        parts.push(...v);
+      }
+    });
+
+    const haystack =
+      parts
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+    return haystack.includes(searchQuery);
+
+  });
+
+}
+
+
+/* ==================================================
+   RENDER TABLE
+   ================================================== */
 
 /* ==================================================
    RENDER TABLE
@@ -724,6 +815,32 @@ function renderTable() {
 
   tbody.innerHTML = "";
 
+
+  const filtered =
+    getFilteredResponses();
+
+
+  /* Info jumlah data */
+
+  const info =
+    document.getElementById("tableInfo");
+
+  if (info) {
+
+    if (responses.length === 0) {
+      info.textContent = "";
+    } else if (searchQuery) {
+      info.textContent =
+        `Menampilkan ${filtered.length} dari ${responses.length} responden`;
+    } else {
+      info.textContent =
+        `Total ${responses.length} responden`;
+    }
+
+  }
+
+
+  /* Belum ada data sama sekali */
 
   if (responses.length === 0) {
 
@@ -741,7 +858,27 @@ function renderTable() {
   }
 
 
-  responses.forEach((data, index) => {
+  /* Ada data, tapi tidak cocok dengan pencarian */
+
+  if (filtered.length === 0) {
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="26" class="empty">
+          Tidak ada data yang cocok dengan pencarian
+          "<strong>${escapeHTML(searchQuery)}</strong>".
+        </td>
+      </tr>
+    `;
+
+    return;
+
+  }
+
+
+  /* Render baris */
+
+  filtered.forEach(({ data, index }) => {
 
     const row =
       document.createElement("tr");
@@ -771,8 +908,8 @@ function renderTable() {
       <td>${formatArray(data.q18)}</td>
       <td>${formatArray(data.q19)}</td>
       <td>${formatArray(data.q20)}</td>
-      <td>${escapeHTML(data.q21)}</td>   <!-- TAMBAH -->
-      <td>${escapeHTML(data.q22)}</td>   <!-- TAMBAH -->
+      <td>${escapeHTML(data.q21)}</td>
+      <td>${escapeHTML(data.q22)}</td>
       <td>
         <div class="action-buttons">
           <button

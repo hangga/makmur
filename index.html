@@ -5,13 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kuesioner Kondisi Masjid</title>
 
-  <!-- ===== PWA ===== -->
-  <meta name="theme-color" content="#4f46e5">
   <meta name="description" content="Pemetaan kondisi, potensi, dan tantangan dakwah masjid.">
-
-  <!-- Icon (SVG & fallback) -->
-  <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="apple-touch-icon" href="icon.svg">
 
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -56,7 +50,6 @@
     </div>
   </div>
 
-  <!-- Input file tersembunyi untuk import -->
   <input
     type="file"
     id="importFile"
@@ -65,8 +58,6 @@
     onchange="handleImportFile(event)"
   >
 
-
-  <!-- TAB NAVIGASI -->
   <div class="tabs">
     <button
       type="button"
@@ -87,7 +78,6 @@
     </button>
   </div>
 
-
   <!-- ==========================================
        HALAMAN 1 : TABEL DATA
        ========================================== -->
@@ -95,6 +85,34 @@
   <div id="page-data" class="page">
 
     <div class="card">
+
+      <!-- Toolbar: Search / Filter -->
+      <div class="table-toolbar">
+
+        <div class="search-box">
+          <!-- <span class="search-icon">🔍</span> -->
+
+          <input
+            type="search"
+            id="searchInput"
+            placeholder="Cari nama peserta, masjid, atau jawaban..."
+            autocomplete="off"
+            oninput="handleSearch()"
+          >
+
+          <button
+            type="button"
+            class="search-clear"
+            id="searchClear"
+            onclick="clearSearch()"
+            aria-label="Bersihkan pencarian"
+            hidden
+          >✕</button>
+        </div>
+
+        <div class="table-info" id="tableInfo"></div>
+
+      </div>
 
       <div class="table-wrapper">
 
@@ -109,7 +127,8 @@
               <th>Posisi/Amanah</th>
               <th>Shalat/Pekan</th>
               <th>Usia Ketua</th>
-              <th>Rata-rata Usia Pengurus</th>
+              <!-- <th>Rata-rata Usia Pengurus</th> -->
+               <th>Usia Pengurus</th>
               <th>Subuh</th>
               <th>Zuhur</th>
               <th>Ashar</th>
@@ -125,9 +144,9 @@
               <th>Kendala Takmir</th>
               <th>Solusi</th>
               <th>Impian Jamaah</th>
-              <th>Usia Imam Termuda</th>   <!-- TAMBAH -->
-              <th>Usia Imam Tertua</th>    <!-- TAMBAH -->
-              <th>Aksi</th>
+              <th>Usia Imam Termuda</th>
+              <th>Usia Imam Tertua</th>
+              <th></th>
             </tr>
           </thead>
 
@@ -141,7 +160,6 @@
 
   </div>
 
-
   <!-- ==========================================
        HALAMAN 2 : STATISTIK & GRAFIK
        ========================================== -->
@@ -152,13 +170,6 @@
   </div>
 
 </div>
-
-
-<!--
-==================================================
-DIALOG FORM
-==================================================
--->
 
 <dialog id="formDialog">
 
@@ -179,7 +190,6 @@ DIALOG FORM
 
   </div>
 
-
   <form id="questionnaireForm">
 
     <div class="dialog-body">
@@ -187,15 +197,9 @@ DIALOG FORM
       <div class="participant-info">
 
         <div class="form-group">
-
-          <label
-            class="form-label"
-            for="namaPeserta"
-          >
-            Nama Peserta
-            <span class="required">*</span>
+          <label class="form-label" for="namaPeserta">
+            Nama Peserta <span class="required">*</span>
           </label>
-
           <input
             type="text"
             id="namaPeserta"
@@ -203,20 +207,12 @@ DIALOG FORM
             placeholder="Masukkan nama peserta"
             required
           >
-
         </div>
 
-
         <div class="form-group">
-
-          <label
-            class="form-label"
-            for="namaMasjid"
-          >
-            Nama Masjid
-            <span class="required">*</span>
+          <label class="form-label" for="namaMasjid">
+            Nama Masjid <span class="required">*</span>
           </label>
-
           <input
             type="text"
             id="namaMasjid"
@@ -224,16 +220,13 @@ DIALOG FORM
             placeholder="Masukkan nama masjid"
             required
           >
-
         </div>
 
       </div>
 
-
       <div id="questionsContainer"></div>
 
     </div>
-
 
     <div class="dialog-footer">
 
@@ -259,11 +252,6 @@ DIALOG FORM
 
 </dialog>
 
-
-<!-- ==========================================
-     OVERLAY FULLSCREEN PIE CHART
-     ========================================== -->
-
 <div
   class="pie-overlay"
   id="pieOverlay"
@@ -271,7 +259,6 @@ DIALOG FORM
 >
   <div class="pie-overlay-inner" id="pieOverlayInner"></div>
 </div>
-
 
 <script src="script.js"></script>
 

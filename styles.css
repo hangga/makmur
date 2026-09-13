@@ -218,7 +218,205 @@ body {
   overflow: hidden;
 }
 
-.table-wrapper { overflow-x: auto; }
+/* .table-wrapper {
+  overflow: auto;
+  max-height: calc(100vh - 200px);
+  min-height: 300px;
+  position: relative;
+  scrollbar-width: thin;
+} */
+
+.table-wrapper {
+  overflow: auto;
+  height: calc(100vh - 300px);
+  min-height: 300px;
+  max-height: 620px;
+  position: relative;
+  scrollbar-width: thin;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 2px solid #f8fafc;
+}
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.table-wrapper::-webkit-scrollbar-corner {
+  background: #f8fafc;
+}
+
+/* ==========================================
+   TABLE TOOLBAR (SEARCH / FILTER)
+   ========================================== */
+
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 1px solid #0f172a;
+  flex-wrap: wrap;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.search-box input[type="search"] {
+  width: 100%;
+  padding: 10px 40px 10px 38px;
+  border: 1px solid #334155;
+  border-radius: var(--radius-sm);
+  background: #0b1220;
+  font-family: inherit;
+  font-size: 14px;
+  color: #e2e8f0;
+  outline: none;
+  transition: all 0.15s var(--ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.search-box input[type="search"]::placeholder {
+  color: #64748b;
+}
+
+.search-box input[type="search"]:hover {
+  border-color: #475569;
+  background: #0f172a;
+}
+
+.search-box input[type="search"]:focus {
+  border-color: #6366f1;
+  background: #0b1220;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.28);
+}
+
+.search-box input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-box .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.6;
+  filter: grayscale(1) brightness(1.6);
+  pointer-events: none;
+  line-height: 1;
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: #334155;
+  color: #e2e8f0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.15s var(--ease);
+}
+
+.search-clear:hover {
+  background: #475569;
+  color: #ffffff;
+}
+
+.table-info {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* .search-box input[type="search"] {
+  width: 100%;
+  padding: 10px 40px 10px 38px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: all 0.15s var(--ease);
+  -webkit-appearance: none;
+  appearance: none;
+} */
+
+/* .search-box input[type="search"]:hover {
+  border-color: #cbd5e1;
+} */
+
+/* .search-box input[type="search"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.search-box input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+} */
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: #f1f5f9;
+  color: var(--ink-muted);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.15s var(--ease);
+}
+
+.search-clear:hover {
+  background: #e2e8f0;
+  color: var(--ink);
+}
+
+.search-clear[hidden] {
+  display: none;
+}
+
+.table-info {
+  font-size: 13px;
+  color: var(--ink-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 
 table {
   width: 100%;
@@ -227,6 +425,17 @@ table {
   border-spacing: 0;
   font-size: 13px;
 }
+
+/* th, td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
+  vertical-align: top;
+  text-align: left;
+  line-height: 1.5;
+}
+
+th:last-child, td:last-child { border-right: 0; } */
 
 th, td {
   padding: 13px 12px;
@@ -239,17 +448,45 @@ th, td {
 
 th:last-child, td:last-child { border-right: 0; }
 
+/* ==========================================
+   STICKY ACTION COLUMN (KANAN)
+   ========================================== */
+
+th:last-child {
+  right: 0;
+  z-index: 5;
+}
+
+td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+th:last-child,
+td:last-child {
+  box-shadow: -10px 0 14px -12px rgba(15, 23, 42, 0.28);
+}
+
+tbody tr:hover td:last-child {
+  background: #fafbff;
+}
+
 th {
-  background: linear-gradient(180deg, #fafbff 0%, #f5f7fb 100%);
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
   font-weight: 700;
   font-size: 12px;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  color: #475569;
+  color: #e2e8f0;
   white-space: nowrap;
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 3;
+  border-bottom-color: #0f172a;
+  border-right-color: #334155;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
 }
 
 tbody tr { transition: background 0.15s var(--ease); }
@@ -1182,6 +1419,25 @@ input[type="text"]:focus {
   .weight-table th, .weight-table td { padding: 8px 10px; }
   .cat-item { flex-wrap: wrap; }
   .cat-badge { min-width: 100px; }
+    .table-toolbar {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .search-box {
+    max-width: none;
+    min-width: 0;
+    flex-basis: 100%;
+  }
+
+  .table-info {
+    font-size: 12px;
+  }
+
+  .table-wrapper {
+    max-height: calc(100vh - 320px);
+    min-height: 300px;
+  }
 }
 
 /* ==========================================
